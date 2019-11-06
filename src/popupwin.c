@@ -21,11 +21,12 @@ typedef struct {
 } poppos_entry_T;
 
 static poppos_entry_T poppos_entries[] = {
-    {"botleft", POPPOS_BOTLEFT},
-    {"topleft", POPPOS_TOPLEFT},
+    {"botleft",  POPPOS_BOTLEFT},
+    {"topleft",  POPPOS_TOPLEFT},
     {"botright", POPPOS_BOTRIGHT},
     {"topright", POPPOS_TOPRIGHT},
-    {"center", POPPOS_CENTER}
+    {"auto",     POPPOS_AUTO},
+    {"center",   POPPOS_CENTER}
 };
 
 static void popup_adjust_position(win_T *wp);
@@ -1371,27 +1372,35 @@ popup_adjust_position(win_T *wp)
 	wp->w_height = wp->w_minheight;
     if (wp->w_maxheight > 0 && wp->w_height > wp->w_maxheight)
 	wp->w_height = wp->w_maxheight;
-    if (wp->w_height > Rows - wp->w_winrow)
-	wp->w_height = Rows - wp->w_winrow;
     if (wp->w_height != org_height)
 	win_comp_scroll(wp);
 
+    // total popup height is the window's height, plus padding/border/title
+    int popup_height = wp->w_height + extra_height;
+
+    // auto: place it in the part of the screen where there is more room
+    if (wp->w_popup_pos == POPPOS_AUTO)
+	wp->w_popup_pos = ( wantline > Rows / 2 )
+	    ? POPPOS_BOTLEFT : POPPOS_TOPLEFT;
+    
+    // centered
     if (center_vert)
-    {
 	wp->w_winrow = (Rows - wp->w_height - extra_height) / 2;
-	if (wp->w_winrow < 0)
-	    wp->w_winrow = 0;
-    }
+
+    // bottom aligned
     else if (wp->w_popup_pos == POPPOS_BOTRIGHT
 	    || wp->w_popup_pos == POPPOS_BOTLEFT)
+	wp->w_winrow = wantline - popup_height;
+
+    // top aligned
+    else if (wp->w_popup_pos == POPPOS_TOPRIGHT
+	    || wp->w_popup_pos == POPPOS_TOPLEFT)
     {
-	if ((wp->w_height + extra_height) <= wantline)
-	    // bottom aligned: may move down
-	    wp->w_winrow = wantline - (wp->w_height + extra_height);
-	else
-	    // Not enough space, make top aligned.
-	    wp->w_winrow = (wantline < 0 ? 0 : wantline) + 1;
+	wp->w_winrow = wantline + 1;
+	if ((popup_height + wp->w_winrow) > Rows)
+	    wp->w_winrow = (Rows - popup_height);
     }
+
     if (wp->w_winrow >= Rows)
 	wp->w_winrow = Rows - 1;
     else if (wp->w_winrow < 0)
