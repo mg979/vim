@@ -459,19 +459,36 @@ pum_redraw(void)
 		break;
 	    }
 	}
-	// Second, we check if all items that have a kind have also an extra
-	// text, if they all have it, there's nothing to adjust.
-	// We must also adjust if there are items with no kind either.
+	// Second, we check if some item lacks the "kind", in this case we must
+	// adjust.
 	if (met_kind)
 	    for (idx = pum_first; idx < pum_height + pum_first; idx++)
 	    {
-		if (pum_array[idx].pum_kind == NULL
-			|| pum_array[idx].pum_extra == NULL)
+		if (pum_array[idx].pum_kind == NULL)
 		{
 		    fill_hl_cols = TRUE;
 		    break;
 		}
 	    }
+	// Third, we check if all items look the same, that is, they all have
+	// an extra text, or they are all without it, otherwise adjust.
+	if (!fill_hl_cols && met_kind)
+	{
+	    int with_extra = FALSE;
+	    int without_extra = FALSE;
+	    for (idx = pum_first; idx < pum_height + pum_first; idx++)
+	    {
+		if (pum_array[idx].pum_extra == NULL && !without_extra)
+		    without_extra = TRUE;
+		else if (pum_array[idx].pum_extra != NULL && !with_extra)
+		    with_extra = TRUE;
+		if (with_extra && without_extra)
+		{
+		    fill_hl_cols = TRUE;
+		    break;
+		}
+	    }
+	}
     }
 
     if (call_update_screen)
