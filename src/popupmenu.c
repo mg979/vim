@@ -439,6 +439,23 @@ pum_redraw(void)
     int	attrsN[3] = { ha[HLF_PNI],	ha[HLF_PNK],	ha[HLF_PNX] };
     int	attrsS[3] = { ha[HLF_PSI],	ha[HLF_PSK],	ha[HLF_PSX] };
 
+    // We check if we must make some adjustments to the popup highlight, in
+    // case there is a mix of items with extra text, and items without it, so
+    // that the resulting highlight is more uniform.
+    int	fix_hl_after_kind = FALSE;
+    if (attrsN[1] != attrsN[2])
+    {
+	for (idx = pum_first; idx < pum_height + pum_first; idx++)
+	{
+	    if (pum_array[idx].pum_kind != NULL
+		    && pum_array[idx].pum_extra == NULL)
+	    {
+		fix_hl_after_kind = TRUE;
+		break;
+	    }
+	}
+    }
+
     if (call_update_screen)
     {
 	call_update_screen = FALSE;
@@ -589,7 +606,18 @@ pum_redraw(void)
 			}
 
 			if (*p != TAB)
+			{
+			    // Fill the rest of the line with the highlight of
+			    // "extra text", so that it doesn't look too weird
+			    // if highlights have different bg color.
+			    if (fix_hl_after_kind && round == 1)
+			    {
+				screen_puts_len(
+					(char_u *)"  ", 2, row, col++, attr);
+				attr = attrs[2];
+			    }
 			    break;
+			}
 
 			// Display two spaces for a Tab.
 #ifdef FEAT_RIGHTLEFT
