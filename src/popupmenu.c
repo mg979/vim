@@ -433,7 +433,7 @@ pum_redraw(void)
     int		thumb_height = 1;
     int		round;
     int		n;
-    int		different_hls = FALSE;
+    int		fill_hl_cols = FALSE;
 
     int *ha = highlight_attr;
     //		      "word"		"kind"		"extra text"
@@ -447,7 +447,7 @@ pum_redraw(void)
 	|| attrsN[0] != attrsN[2]
 	|| attrsN[1] != attrsN[2])
     {
-	different_hls = FALSE;
+	fill_hl_cols = FALSE;
 	// First, we check if some item has the "kind" column, if none has it,
 	// there's nothing to adjust.
 	int met_kind = FALSE;
@@ -468,7 +468,7 @@ pum_redraw(void)
 		if (pum_array[idx].pum_kind == NULL
 			|| pum_array[idx].pum_extra == NULL)
 		{
-		    different_hls = TRUE;
+		    fill_hl_cols = TRUE;
 		    break;
 		}
 	    }
@@ -625,8 +625,8 @@ pum_redraw(void)
 
 			if (*p != TAB)
 			{
-			    if (!different_hls)
-			    	break;
+			    if (!fill_hl_cols)
+				break;
 			    // fill with the highlight of "extra text", so that
 			    // it doesn't look too weird if highlights have
 			    // different bg color
