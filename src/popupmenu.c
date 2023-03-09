@@ -433,7 +433,8 @@ pum_redraw(void)
     int		thumb_height = 1;
     int		round;
     int		n;
-    int		fill_hl_cols = FALSE;
+    int		fill_hl_kind = FALSE;
+    int		fill_hl_extra = FALSE;
 
     int *ha = highlight_attr;
     //		      "word"		"kind"		"extra text"
@@ -443,50 +444,32 @@ pum_redraw(void)
     // We check if we must make some adjustments to the popup highlight, in
     // case there is a mix of items with extra text, and items without it, so
     // that the resulting highlight is more uniform.
-    if (attrsN[0] != attrsN[1]
-	|| attrsN[0] != attrsN[2]
-	|| attrsN[1] != attrsN[2])
+    if (pum_kind_width > 0
+	    && (attrsN[0] != attrsN[1]
+		|| attrsN[0] != attrsN[2]
+		|| attrsN[1] != attrsN[2]))
     {
-	fill_hl_cols = FALSE;
-	// First, we check if some item has the "kind" column, if none has it,
-	// there's nothing to adjust.
-	int met_kind = FALSE;
+	// We check if some item lacks the "kind", in this case we must adjust.
 	for (idx = pum_first; idx < pum_height + pum_first; idx++)
-	{
-	    if (pum_array[idx].pum_kind != NULL)
+	    if (pum_array[idx].pum_kind == NULL)
 	    {
-		met_kind = TRUE;
+		fill_hl_kind = TRUE;
 		break;
 	    }
-	}
-	// Second, we check if some item lacks the "kind", in this case we must
-	// adjust.
-	if (met_kind)
-	    for (idx = pum_first; idx < pum_height + pum_first; idx++)
-	    {
-		if (pum_array[idx].pum_kind == NULL)
-		{
-		    fill_hl_cols = TRUE;
-		    break;
-		}
-	    }
-	// Third, we check if all items look the same, that is, they all have
-	// an extra text, or they are all without it, otherwise adjust.
-	if (!fill_hl_cols && met_kind)
+	// We also check if all items look the same, that is, they all have an
+	// extra text, or they are all without it.
+	int with_extra = FALSE;
+	int without_extra = FALSE;
+	for (idx = pum_first; idx < pum_height + pum_first; idx++)
 	{
-	    int with_extra = FALSE;
-	    int without_extra = FALSE;
-	    for (idx = pum_first; idx < pum_height + pum_first; idx++)
+	    if (pum_array[idx].pum_extra == NULL && !without_extra)
+		without_extra = TRUE;
+	    else if (pum_array[idx].pum_extra != NULL && !with_extra)
+		with_extra = TRUE;
+	    if (with_extra && without_extra)
 	    {
-		if (pum_array[idx].pum_extra == NULL && !without_extra)
-		    without_extra = TRUE;
-		else if (pum_array[idx].pum_extra != NULL && !with_extra)
-		    with_extra = TRUE;
-		if (with_extra && without_extra)
-		{
-		    fill_hl_cols = TRUE;
-		    break;
-		}
+		fill_hl_extra = TRUE;
+		break;
 	    }
 	}
     }
@@ -642,19 +625,21 @@ pum_redraw(void)
 
 			if (*p != TAB)
 			{
-			    if (!fill_hl_cols)
+			    if (!fill_hl_kind && !fill_hl_extra)
 				break;
 			    // fill with the highlight of "extra text", so that
 			    // it doesn't look too weird if highlights have
 			    // different bg color
 			    if (round == 1
+				    && fill_hl_extra
 				    && pum_array[idx].pum_extra == NULL)
 			    {
 				screen_puts_len(
-					(char_u *)"  ", 2, row, col++, attr);
+					(char_u *)" ", 1, row, col++, attr);
 				attr = attrs[2];
 			    }
 			    else if (round == 0
+				    && fill_hl_kind
 				    && pum_array[idx].pum_kind == NULL)
 			    {
 				// fill up to the "kind" column
@@ -670,7 +655,7 @@ pum_redraw(void)
 					(char_u *)"   ",
 					3, row, col, attrs[1]);
 				col += 3;
-				attr = attrs[2];
+				attr = fill_hl_extra ? attrs[2] : attrs[1];
 			    }
 			    break;
 			}
