@@ -433,6 +433,7 @@ pum_redraw(void)
     int		thumb_height = 1;
     int		round;
     int		n;
+    int		different_hls = FALSE;
 
     int *ha = highlight_attr;
     //		      "word"		"kind"		"extra text"
@@ -442,18 +443,35 @@ pum_redraw(void)
     // We check if we must make some adjustments to the popup highlight, in
     // case there is a mix of items with extra text, and items without it, so
     // that the resulting highlight is more uniform.
-    int	fix_hl_after_kind = FALSE;
-    if (attrsN[1] != attrsN[2])
+    if (attrsN[0] != attrsN[1]
+	|| attrsN[0] != attrsN[2]
+	|| attrsN[1] != attrsN[2])
     {
+	different_hls = FALSE;
+	// First, we check if some item has the "kind" column, if none has it,
+	// there's nothing to adjust.
+	int met_kind = FALSE;
 	for (idx = pum_first; idx < pum_height + pum_first; idx++)
 	{
-	    if (pum_array[idx].pum_kind != NULL
-		    && pum_array[idx].pum_extra == NULL)
+	    if (pum_array[idx].pum_kind != NULL)
 	    {
-		fix_hl_after_kind = TRUE;
+		met_kind = TRUE;
 		break;
 	    }
 	}
+	// Second, we check if all items that have a kind have also an extra
+	// text, if they all have it, there's nothing to adjust.
+	// We must also adjust if there are items with no kind either.
+	if (met_kind)
+	    for (idx = pum_first; idx < pum_height + pum_first; idx++)
+	    {
+		if (pum_array[idx].pum_kind == NULL
+			|| pum_array[idx].pum_extra == NULL)
+		{
+		    different_hls = TRUE;
+		    break;
+		}
+	    }
     }
 
     if (call_update_screen)
@@ -607,13 +625,31 @@ pum_redraw(void)
 
 			if (*p != TAB)
 			{
-			    // Fill the rest of the line with the highlight of
-			    // "extra text", so that it doesn't look too weird
-			    // if highlights have different bg color.
-			    if (fix_hl_after_kind && round == 1)
+			    if (!different_hls)
+			    	break;
+			    // fill with the highlight of "extra text", so that
+			    // it doesn't look too weird if highlights have
+			    // different bg color
+			    if (round == 1
+				    && pum_array[idx].pum_extra == NULL)
 			    {
 				screen_puts_len(
 					(char_u *)"  ", 2, row, col++, attr);
+				attr = attrs[2];
+			    }
+			    else if (round == 0
+				    && pum_array[idx].pum_kind == NULL)
+			    {
+				// fill up to the "kind" column
+				for (; col < pum_col + pum_base_width + 1;)
+				    screen_puts_len(
+					    (char_u *)" ",
+					    1, row, col++, attrs[0]);
+				// an empty "kind" column
+				screen_puts_len(
+					(char_u *)"   ",
+					3, row, col, attrs[1]);
+				col += 3;
 				attr = attrs[2];
 			    }
 			    break;
