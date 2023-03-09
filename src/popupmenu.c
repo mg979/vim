@@ -641,10 +641,13 @@ pum_redraw(void)
 				    && pum_array[idx].pum_kind == NULL)
 			    {
 				// fill up to the "kind" column
-				for (; col < pum_col + pum_base_width + 1;)
-				    screen_puts_len(
-					    (char_u *)" ",
-					    1, row, col++, attrs[0]);
+				int sz = pum_col + pum_base_width + 1 - col;
+				char_u *spc = alloc(sz + 1);
+				memset(spc, ' ', sz);
+				spc[sz] = NUL;
+				screen_puts_len(spc, sz, row, col, attrs[0]);
+				col += sz;
+				vim_free(spc);
 				// an empty "kind" column
 				screen_puts_len(
 					(char_u *)"   ",
