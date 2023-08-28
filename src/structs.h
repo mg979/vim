@@ -1488,18 +1488,16 @@ typedef struct {
 #define TTFLAG_CONST	    0x20    // cannot be changed
 #define TTFLAG_SUPER	    0x40    // object from "super".
 
-typedef enum {
-    VIM_ACCESS_PRIVATE,	// read/write only inside the class
-    VIM_ACCESS_READ,	// read everywhere, write only inside the class
-    VIM_ACCESS_ALL	// read/write everywhere
-} omacc_T;
+#define VIM_ACCESS_ALL	    0x01    // access from everywhere
+#define VIM_ACCESS_PRIVATE  0x02    // access only from inside the class
+#define VIM_ACCESS_READ	    0x04    // read-only access, otherwise also write
 
 /*
  * Entry for an object or class member variable.
  */
 typedef struct {
     char_u	*ocm_name;   // allocated
-    omacc_T	ocm_access;
+    int		ocm_access;
     type_T	*ocm_type;
     char_u	*ocm_init;   // allocated
 } ocmember_T;

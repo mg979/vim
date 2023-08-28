@@ -103,6 +103,8 @@ You can create an object from this class with the new() method: >
 
 	var pos = TextPosition.new(1, 1)
 
+The new() method is called the "constructor".
+
 The object members "lnum" and "col" can be accessed directly: >
 
 	echo $'The text position is ({pos.lnum}, {pos.col})'
@@ -114,50 +116,20 @@ naming convention makes the object members easy to spot.  Also, when a
 variable does not have the "this." prefix you know it is not an object member.
 
 
-Member write access ~
+Member read/write access ~
 
-Now try to change an object member directly: >
-
-	pos.lnum = 9
-<							*E1335*
-This will give you an error!  That is because by default object members can be
-read but not set.  That's why the TextPosition class provides a method for it: >
-
-	pos.SetLnum(9)
-
-Allowing to read but not set an object member is the most common and safest
-way.  Most often there is no problem using a value, while setting a value may
-have side effects that need to be taken care of.  In this case, the SetLnum()
-method could check if the line number is valid and either give an error or use
-the closest valid value.
-							*:public* *E1331*
-If you don't care about side effects and want to allow the object member to be
-changed at any time, you can make it public: >
-
-	public this.lnum: number
-	public this.col: number
-
-Now you don't need the SetLnum(), SetCol() and SetPosition() methods, setting
-"pos.lnum" directly above will no longer give an error.
-							*E1334*
-If you try to set an object member that doesn't exist you get an error: >
-	pos.other = 9
-<	E1334: Object member not found: other ~
-
-
-Private members ~
-							*E1332* *E1333*
-On the other hand, if you do not want the object members to be read directly,
-you can make them private.  This is done by prefixing an underscore to the
-name: >
-
-	this._lnum: number
-	this._col number
-
+Object members are `public` by default, meaning they can be accessed from
+anywhere.
+							  *E1333*
+If you want to make a member `private`, that is if you want to limit the access
+to the class instances, prepend an underscore to the member name:
+>
+	this.lnum: number	" this is a public member
+	this._col: number	" this is a private member
+<
 Now you need to provide methods to get the value of the private members.
 These are commonly called getters.  We recommend using a name that starts with
 "Get": >
-
 	def GetLnum(): number
 	   return this._lnum
 	enddef
@@ -165,20 +137,38 @@ These are commonly called getters.  We recommend using a name that starts with
 	def GetCol() number
 	   return this._col
 	enddef
+<							  *E1335*
+If you want to prevent a member from being changed at runtime, prepend the
+`readonly` modifier:
+>
+	readonly this.type: string
+<
+In this case, the member must be assigned a value inside the class, or by the
+object constructor, after that it cannot be changed anymore during the lifetime
+of the object. Example: 
+>
+    class SomeClass
+	readonly this.name = "default name"
 
-This example isn't very useful, the members might as well have been public.
-It does become useful if you check the value.  For example, restrict the line
-number to the total number of lines: >
-
-	def GetLnum(): number
-	   if this._lnum > this._lineCount
-	      return this._lineCount
-	   endif
-	   return this._lnum
+	def new(name: string)
+	  this.name = name
 	enddef
+    endclass
+<
+The member `this.name` is `readonly`, so it cannot be changed after the
+instance has been created, but it can still be changed during oject
+initialization.
+
+							*E1334*
+If you try to set an object member that doesn't exist you get an error: >
+	pos.other = 9
+<	E1334: Object member not found: other ~
 
 
-Private methods ~
+Object methods access ~
+
+Object methods follow largely the same rules: they are public by default,
+meaning a method can be accessed from anywhere.
 If you want object methods to be accessible only from other methods of the
 same class and not used from outside the class, then you can make them
 private.  This is done by prefixing the method name with an underscore: >
@@ -191,13 +181,14 @@ private.  This is done by prefixing the method name with an underscore: >
 	  return this._Foo()
 	enddef
     endclass
-<
+<							*E1366*
 Accessing a private method outside the class will result in an error (using
 the above class): >
 
-    var a = SomeClass.new()
-    a._Foo()
-<
+	var a = SomeClass.new()
+	a._Foo()
+<	E1366: Cannot access private method: _Foo ~
+
 Simplifying the new() method ~
 
 Many constructors take values for the object members.  Thus you very often see
