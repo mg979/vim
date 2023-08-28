@@ -3489,6 +3489,8 @@ EXTERN char e_cannot_access_private_method_str[]
 
 EXTERN char e_interface_str_and_class_str_function_access_not_same[]
 	INIT(= N_("E1367: Access type of class method %s differs from interface method %s"));
+EXTERN char e_cannot_define_new_function_as_static[]
+	INIT(= N_("E1368: Cannot define a \"new\" function as static"));
 EXTERN char e_cannot_mix_positional_and_non_positional_str[]
 	INIT(= N_("E1400: Cannot mix positional and non-positional arguments: %s"));
 EXTERN char e_fmt_arg_nr_unused_str[]
